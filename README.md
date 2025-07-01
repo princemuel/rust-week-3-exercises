@@ -2,7 +2,7 @@
 
 ## Instructions
 
-Welcome! This exercise is designed to help you practice key Rust programming skills specifically for Bitcoin development. 
+Welcome! This exercise is designed to help you practice key Rust programming skills specifically for Bitcoin development.
 Your task is to complete the `TODO` items found in the source files located in the `src/` directory.
 
 1. Fork this repository.
@@ -18,19 +18,27 @@ Your task is to complete the `TODO` items found in the source files located in t
    - Implement the missing logic where indicated.
    - Ensure your code is readable, idiomatic, and compiles without warnings.
 6. **Test Your Code**
+
    - Run the tests using:
+
      ```bash
      cargo test --test unit_tests
      ```
+
 7. **Format and Lint (Optional but Recommended)**
+
    - Format your code:
+
      ```bash
      cargo fmt
      ```
+
    - Run Clippy for linting:
+
      ```bash
      cargo clippy
      ```
+
 8. Commit and push your changes to the `main` branch of your remote fork.
 
 9. Confirm your forked repository has a green check mark.
