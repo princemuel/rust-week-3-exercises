@@ -206,7 +206,6 @@ impl TransactionInput {
         let (previous_output, outpoint_len) = OutPoint::from_bytes(&bytes[cursor..])?;
         cursor += outpoint_len;
 
-        // Parse the Script (variable length with CompactSize prefix)
         let (script_sig, script_len) = Script::from_bytes(&bytes[cursor..])?;
         cursor += script_len;
 
@@ -238,7 +237,13 @@ pub struct BitcoinTransaction {
 }
 
 impl BitcoinTransaction {
-    pub fn new(version: u32, inputs: Vec<TransactionInput>, lock_time: u32) -> Self { todo!() }
+    pub fn new(version: u32, inputs: Vec<TransactionInput>, lock_time: u32) -> Self {
+        Self {
+            version,
+            inputs,
+            lock_time,
+        }
+    }
 
     pub fn to_bytes(&self) -> Vec<u8> { todo!() }
 
@@ -246,5 +251,32 @@ impl BitcoinTransaction {
 }
 
 impl fmt::Display for BitcoinTransaction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { todo!() }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Bitcoin Transaction:\n Version: {}\n Lock Time: {}\n Inputs ({}):\n",
+            self.version,
+            self.lock_time,
+            self.inputs.len()
+        )?;
+
+        for (i, input) in self.inputs.iter().enumerate() {
+            write!(
+                f,
+                "  Input {}:\n  Previous Output Vout: {}\n  Script Sig Length: {}\n  Script \
+                 Sig: ",
+                i,
+                input.previous_output.vout,
+                input.script_sig.bytes.len()
+            )?;
+
+            for &byte in &input.script_sig.bytes {
+                write!(f, "{byte:02x}")?;
+            }
+
+            write!(f, "\n  Sequence: 0x{:08x}\n", input.sequence)?;
+        }
+
+        Ok(())
+    }
 }
