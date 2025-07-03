@@ -48,19 +48,21 @@ impl CompactSize {
         match bytes {
             [] => Err(BitcoinError::InsufficientBytes),
             [first @ 0x00..=0xfc, ..] => Ok((Self::new(*first as u64), 1)),
-            [0xfd, rest @ ..] if rest.len() >= 2 => {
-                let value = u16::from_le_bytes(rest[0..2].try_into().unwrap()) as u64;
+            [0xfd, rest @ ..] => {
+                let slice = rest.get(0..2).ok_or(BitcoinError::InsufficientBytes)?;
+                let value = u16::from_le_bytes(slice.try_into().unwrap()) as u64;
                 Ok((Self::new(value), 3))
             },
-            [0xfe, rest @ ..] if rest.len() >= 4 => {
-                let value = u32::from_le_bytes(rest[0..4].try_into().unwrap()) as u64;
+            [0xfe, rest @ ..] => {
+                let slice = rest.get(0..4).ok_or(BitcoinError::InsufficientBytes)?;
+                let value = u32::from_le_bytes(slice.try_into().unwrap()) as u64;
                 Ok((Self::new(value), 5))
             },
-            [0xff, rest @ ..] if rest.len() >= 8 => {
-                let value = u64::from_le_bytes(rest[0..8].try_into().unwrap());
+            [0xff, rest @ ..] => {
+                let slice = rest.get(0..8).ok_or(BitcoinError::InsufficientBytes)?;
+                let value = u64::from_le_bytes(slice.try_into().unwrap());
                 Ok((Self::new(value), 9))
             },
-            _ => Err(BitcoinError::InsufficientBytes),
         }
     }
 }
