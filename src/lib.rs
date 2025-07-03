@@ -27,12 +27,12 @@ impl CompactSize {
         };
 
         match self.value {
-            ..=252 => bytes.push(self.value as u8),
-            253..=65535 => {
+            ..=0xfc => bytes.push(self.value as u8),
+            0xfd..=0xffff => {
                 bytes.push(0xfd);
                 bytes.extend_from_slice(&(self.value as u16).to_le_bytes());
             },
-            65536..=4294967295 => {
+            0x10000..=0xffffffff => {
                 bytes.push(0xfe);
                 bytes.extend_from_slice(&(self.value as u32).to_le_bytes());
             },
@@ -137,17 +137,36 @@ pub struct Script {
 }
 
 impl Script {
-    pub fn new(bytes: Vec<u8>) -> Self { todo!() }
+    pub fn new(bytes: Vec<u8>) -> Self { Self { bytes } }
 
-    pub fn to_bytes(&self) -> Vec<u8> { todo!() }
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let len = CompactSize::new(self.bytes.len() as u64);
+        let len_bytes = len.to_bytes();
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> { todo!() }
+        let mut result = Vec::with_capacity(len_bytes.len() + self.bytes.len());
+        result.extend_from_slice(&len_bytes);
+        result.extend_from_slice(&self.bytes);
+        result
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+        let (len, len_bytes) = CompactSize::from_bytes(bytes)?;
+        let len_script = len.value as usize;
+
+        let total_needed = len_bytes + len_script;
+        if bytes.len() < total_needed {
+            return Err(BitcoinError::InsufficientBytes);
+        }
+
+        let script_bytes = bytes[len_bytes..total_needed].to_vec();
+        Ok((Script::new(script_bytes), total_needed))
+    }
 }
 
 impl Deref for Script {
     type Target = Vec<u8>;
 
-    fn deref(&self) -> &Self::Target { todo!() }
+    fn deref(&self) -> &Self::Target { &self.bytes }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
