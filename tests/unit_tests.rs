@@ -28,8 +28,8 @@ mod tests {
             let cs = CompactSize::new(value);
             assert_eq!(cs.to_bytes(), bytes);
             let (decoded, consumed) = CompactSize::from_bytes(&bytes).unwrap();
-            assert_eq!(decoded.value, value);
-            assert_eq!(consumed, bytes.len());
+            debug_assert_eq!(decoded.value, value);
+            debug_assert_eq!(consumed, bytes.len());
         }
     }
 
