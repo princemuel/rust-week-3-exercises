@@ -177,11 +177,57 @@ pub struct TransactionInput {
 }
 
 impl TransactionInput {
-    pub fn new(previous_output: OutPoint, script_sig: Script, sequence: u32) -> Self { todo!() }
+    pub fn new(previous_output: OutPoint, script_sig: Script, sequence: u32) -> Self {
+        Self {
+            previous_output,
+            script_sig,
+            sequence,
+        }
+    }
 
-    pub fn to_bytes(&self) -> Vec<u8> { todo!() }
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let outpoint_bytes = self.previous_output.to_bytes();
+        let script_bytes = self.script_sig.to_bytes();
+        let sequence_bytes: [u8; 4] = self.sequence.to_le_bytes();
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> { todo!() }
+        let mut bytes = Vec::with_capacity(
+            outpoint_bytes.len() + script_bytes.len() + sequence_bytes.len(),
+        );
+
+        bytes.extend_from_slice(&outpoint_bytes);
+        bytes.extend_from_slice(&script_bytes);
+        bytes.extend_from_slice(&sequence_bytes);
+        bytes
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+        let mut cursor = 0;
+
+        let (previous_output, outpoint_len) = OutPoint::from_bytes(&bytes[cursor..])?;
+        cursor += outpoint_len;
+
+        // Parse the Script (variable length with CompactSize prefix)
+        let (script_sig, script_len) = Script::from_bytes(&bytes[cursor..])?;
+        cursor += script_len;
+
+        if bytes.len() < cursor + 4 {
+            return Err(BitcoinError::InsufficientBytes);
+        }
+
+        let sequence = u32::from_le_bytes([
+            bytes[cursor],
+            bytes[cursor + 1],
+            bytes[cursor + 2],
+            bytes[cursor + 3],
+        ]);
+
+        cursor += 4;
+
+        Ok((
+            TransactionInput::new(previous_output, script_sig, sequence),
+            cursor,
+        ))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
