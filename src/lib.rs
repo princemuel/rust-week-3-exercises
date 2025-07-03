@@ -245,9 +245,60 @@ impl BitcoinTransaction {
         }
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> { todo!() }
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let input_count = CompactSize::new(self.inputs.len() as u64);
+        let input_count_bytes = input_count.to_bytes();
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> { todo!() }
+        // initial capacity = version + count + lock_time
+        let mut bytes = Vec::with_capacity(4 + input_count_bytes.len() + 4);
+
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+        bytes.extend_from_slice(&input_count_bytes);
+
+        for input in &self.inputs {
+            bytes.extend_from_slice(&input.to_bytes());
+        }
+
+        bytes.extend_from_slice(&self.lock_time.to_le_bytes());
+
+        bytes
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+        let mut cursor = 0;
+
+        if bytes.len() < 4 {
+            return Err(BitcoinError::InsufficientBytes);
+        }
+
+        let version = u32::from_le_bytes((&bytes[0..4]).try_into().unwrap());
+        cursor += 4;
+
+        let (input_count, count_len) = CompactSize::from_bytes(&bytes[cursor..])?;
+        cursor += count_len;
+
+        let mut inputs = Vec::with_capacity(input_count.value as usize);
+
+        for _ in 0..input_count.value {
+            let (input, input_len) = TransactionInput::from_bytes(&bytes[cursor..])?;
+            inputs.push(input);
+            cursor += input_len;
+        }
+
+        if bytes.len() < cursor + 4 {
+            return Err(BitcoinError::InsufficientBytes);
+        }
+
+        let lock_time = u32::from_le_bytes([
+            bytes[cursor],
+            bytes[cursor + 1],
+            bytes[cursor + 2],
+            bytes[cursor + 3],
+        ]);
+        cursor += 4;
+
+        Ok((BitcoinTransaction::new(version, inputs, lock_time), cursor))
+    }
 }
 
 impl fmt::Display for BitcoinTransaction {
