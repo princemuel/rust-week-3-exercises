@@ -16,7 +16,9 @@ pub enum BitcoinError {
 }
 
 impl CompactSize {
-    pub fn new(value: u64) -> Self { Self { value } }
+    pub fn new(value: u64) -> Self {
+        Self { value }
+    }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = match self.value {
@@ -137,7 +139,9 @@ pub struct Script {
 }
 
 impl Script {
-    pub fn new(bytes: Vec<u8>) -> Self { Self { bytes } }
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Self { bytes }
+    }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let len = CompactSize::new(self.bytes.len() as u64);
@@ -166,14 +170,16 @@ impl Script {
 impl Deref for Script {
     type Target = Vec<u8>;
 
-    fn deref(&self) -> &Self::Target { &self.bytes }
+    fn deref(&self) -> &Self::Target {
+        &self.bytes
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct TransactionInput {
     pub previous_output: OutPoint,
-    pub script_sig:      Script,
-    pub sequence:        u32,
+    pub script_sig: Script,
+    pub sequence: u32,
 }
 
 impl TransactionInput {
@@ -231,8 +237,8 @@ impl TransactionInput {
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BitcoinTransaction {
-    pub version:   u32,
-    pub inputs:    Vec<TransactionInput>,
+    pub version: u32,
+    pub inputs: Vec<TransactionInput>,
     pub lock_time: u32,
 }
 
