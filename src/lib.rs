@@ -76,9 +76,9 @@ impl Serialize for Txid {
     where
         S: serde::Serializer,
     {
-        let mut bytes = self.0;
-        bytes.reverse();
-        s.serialize_str(&hex::encode(bytes))
+        // let mut bytes = self.0;
+        // bytes.reverse();
+        s.serialize_str(&hex::encode(self.0))
     }
 }
 
