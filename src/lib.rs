@@ -22,14 +22,14 @@ impl CompactSize {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = match self.value {
-            ..=0xfc => Vec::with_capacity(1),
+            0x00..=0xfc => Vec::with_capacity(1),
             0xfd..=0xffff => Vec::with_capacity(3),
             0x10000..=0xffffffff => Vec::with_capacity(5),
             _ => Vec::with_capacity(9),
         };
 
         match self.value {
-            ..=0xfc => bytes.push(self.value as u8),
+            0x00..=0xfc => bytes.push(self.value as u8),
             0xfd..=0xffff => {
                 bytes.push(0xfd);
                 bytes.extend_from_slice(&(self.value as u16).to_le_bytes());
@@ -50,7 +50,7 @@ impl CompactSize {
     pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         match bytes {
             [] => Err(BitcoinError::InsufficientBytes),
-            [uno @ ..=0xfc, ..] => Ok((Self::new(*uno as u64), 1)),
+            [first @ 0x00..=0xfc, ..] => Ok((Self::new(*first as u64), 1)),
             [0xfd, rest @ ..] => {
                 let slice = rest.get(..2).ok_or(BitcoinError::InsufficientBytes)?;
                 let value = u16::from_le_bytes(slice.try_into().unwrap()) as u64;
