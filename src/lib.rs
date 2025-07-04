@@ -311,7 +311,11 @@ impl fmt::Display for BitcoinTransaction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Bitcoin Transaction:::\n Version: {}\n Lock Time: {}\n Inputs ({}):\n",
+            r#"Bitcoin Transaction
+                    Version: {}
+                    Lock Time: {}
+                    Inputs ({}):
+            "#,
             self.version,
             self.lock_time,
             self.inputs.len()
@@ -320,7 +324,11 @@ impl fmt::Display for BitcoinTransaction {
         for (i, input) in self.inputs.iter().enumerate() {
             write!(
                 f,
-                "  Input: {}:::\nPrevious Output Vout: {}\nScript Sig Length: {}\nScript Sig: ",
+                r#"         Input: {}
+                                Previous Output Vout: {}
+                                Script Sig Length: {}
+                                Script Sig:
+            "#,
                 i,
                 input.previous_output.vout,
                 input.script_sig.bytes.len()
@@ -330,7 +338,7 @@ impl fmt::Display for BitcoinTransaction {
                 write!(f, "{byte:02x}")?;
             }
 
-            write!(f, "\n  Sequence: 0x{:08x}\n", input.sequence)?;
+            write!(f, "\n       Sequence: 0x{:08x}\n", input.sequence)?;
         }
 
         Ok(())
