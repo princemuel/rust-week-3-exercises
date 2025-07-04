@@ -215,16 +215,10 @@ impl TransactionInput {
         let (script_sig, script_len) = Script::from_bytes(&bytes[cursor..])?;
         cursor += script_len;
 
-        if bytes.len() < cursor + 4 {
+        let Some(slice) = bytes.get(cursor..cursor + 4) else {
             return Err(BitcoinError::InsufficientBytes);
-        }
-
-        let sequence = u32::from_le_bytes([
-            bytes[cursor],
-            bytes[cursor + 1],
-            bytes[cursor + 2],
-            bytes[cursor + 3],
-        ]);
+        };
+        let sequence = u32::from_le_bytes(slice.try_into().unwrap());
 
         cursor += 4;
 
@@ -291,16 +285,11 @@ impl BitcoinTransaction {
             cursor += input_len;
         }
 
-        if bytes.len() < cursor + 4 {
+        let Some(slice) = bytes.get(cursor..cursor + 4) else {
             return Err(BitcoinError::InsufficientBytes);
-        }
+        };
+        let lock_time = u32::from_le_bytes(slice.try_into().unwrap());
 
-        let lock_time = u32::from_le_bytes([
-            bytes[cursor],
-            bytes[cursor + 1],
-            bytes[cursor + 2],
-            bytes[cursor + 3],
-        ]);
         cursor += 4;
 
         Ok((BitcoinTransaction::new(version, inputs, lock_time), cursor))
