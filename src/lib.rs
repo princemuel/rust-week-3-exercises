@@ -15,12 +15,19 @@ pub enum BitcoinError {
     InvalidFormat,
 }
 
+pub trait BitcoinSerializable: Sized {
+    fn to_bytes(&self) -> Vec<u8>;
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError>;
+}
+
 impl CompactSize {
     pub fn new(value: u64) -> Self {
         Self { value }
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl BitcoinSerializable for CompactSize {
+    fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = match self.value {
             0x00..=0xfc => Vec::with_capacity(1),
             0xfd..=0xffff => Vec::with_capacity(3),
@@ -47,7 +54,7 @@ impl CompactSize {
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         match bytes {
             [] => Err(BitcoinError::InsufficientBytes),
             [first @ 0x00..=0xfc, ..] => Ok((Self::new(*first as u64), 1)),
@@ -115,15 +122,17 @@ impl OutPoint {
             txid: Txid(txid),
         }
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl BitcoinSerializable for OutPoint {
+    fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(36);
         bytes.extend_from_slice(&self.txid.0);
         bytes.extend_from_slice(&self.vout.to_le_bytes());
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         if bytes.len() < 36 {
             return Err(BitcoinError::InsufficientBytes);
         }
@@ -142,8 +151,10 @@ impl Script {
     pub fn new(bytes: Vec<u8>) -> Self {
         Self { bytes }
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl BitcoinSerializable for Script {
+    fn to_bytes(&self) -> Vec<u8> {
         let len = CompactSize::new(self.bytes.len() as u64);
         let len_bytes = len.to_bytes();
 
@@ -153,7 +164,7 @@ impl Script {
         result
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         let (len, len_bytes) = CompactSize::from_bytes(bytes)?;
         let len_script = len.value as usize;
 
@@ -190,8 +201,10 @@ impl TransactionInput {
             sequence,
         }
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl BitcoinSerializable for TransactionInput {
+    fn to_bytes(&self) -> Vec<u8> {
         let outpoint_bytes = self.previous_output.to_bytes();
         let script_bytes = self.script_sig.to_bytes();
         let sequence_bytes: [u8; 4] = self.sequence.to_le_bytes();
@@ -206,7 +219,7 @@ impl TransactionInput {
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         let mut cursor = 0;
 
         let (previous_output, outpoint_len) = OutPoint::from_bytes(&bytes[cursor..])?;
@@ -244,8 +257,10 @@ impl BitcoinTransaction {
             lock_time,
         }
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl BitcoinSerializable for BitcoinTransaction {
+    fn to_bytes(&self) -> Vec<u8> {
         let input_count = CompactSize::new(self.inputs.len() as u64);
         let input_count_bytes = input_count.to_bytes();
 
@@ -264,7 +279,7 @@ impl BitcoinTransaction {
         bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
+    fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         let mut cursor = 0;
 
         if bytes.len() < 4 {
